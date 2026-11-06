@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <title>docsify 演示 | 零构建的 Markdown 文档站</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="用 docsify + GitHub Pages 把一个 Markdown 目录直接变成文档网站的最小示例">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/docsify@5/lib/themes/vue.css">
+  <style>
+    /* 站点根路径注入 CSS 变量，供图片修正插件使用 */
+    .app-nav { z-index: 10; }
+    /* 表格在窄屏可横向滚动，避免被 docsify 默认样式压扁 */
+    .markdown-section table { display: table; width: 100%; }
+    /* 自定义提示块 */
+    .tip {
+      border-left: 4px solid #42b883;
+      background: #f6fbf8;
+      padding: 10px 14px;
+      margin: 16px 0;
+      border-radius: 0 4px 4px 0;
+    }
+    body.dark-mode .tip { background: #1f2b25; color: #d8d8d8; }
+    /* 暗黑模式 */
+    body.dark-mode { background: #1a1a1a; color: #e6e6e6; }
+    body.dark-mode .sidebar { background: #141414; }
+    body.dark-mode .markdown-section h1,
+    body.dark-mode .markdown-section h2,
+    body.dark-mode .markdown-section h3 { color: #ffffff; }
+    body.dark-mode .markdown-section code {
+      background: #2b2b2b; color: #f08d49;
+    }
+    body.dark-mode .markdown-section pre { background: #2b2b2b !important; }
+    body.dark-mode .markdown-section blockquote {
+      color: #b0b0b0; border-left-color: #42b883;
+    }
+    /* 主题切换按钮 */
+    .theme-toggle {
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      z-index: 20;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 1px solid #ddd;
+      background: #fff;
+      cursor: pointer;
+      font-size: 18px;
+      line-height: 1;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, .15);
+      transition: transform .2s;
+    }
+    .theme-toggle:hover { transform: scale(1.1); }
+    body.dark-mode .theme-toggle {
+      background: #2b2b2b; border-color: #444;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- docsify 的唯一挂载点：所有 Markdown 都会渲染进这里 -->
+  <div id="app">正在加载…</div>
+
+  <script>
+    window.$docsify = {
+      // ===== 基础信息 =====
+      name: 'docsify 演示站',
+      // 仓库地址：会在右上角生成 GitHub 角标
+      repo: 'https://github.com/baofengxue27/docsify-demo',
+
+      // ===== 目录 =====
+      loadSidebar: true,      // 加载 _sidebar.md 作为左侧目录
+      loadNavbar: true,       // 加载 _navbar.md 作为顶部导航
+      subMaxLevel: 3,         // 侧边栏自动展开到 h3，形成层级
+      maxLevel: 4,            // 正文标题最大编号层级
+      auto2top: true,         // 切换页面自动回到顶部
+      // 首页默认渲染 README.md，无需额外配置
+
+      // ===== 链接与标题 =====
+      // 相对链接在路由中正确解析（写 markdown 时可以直接用 xxx.md）
+      relativePath: true,
+      // 让标题锚点支持中文（默认已是，此处显式声明）
+      homepage: 'README.md',
+
+      // ===== 搜索（全文索引存 localStorage，maxAge 后自动重建）=====
+      search: {
+        placeholder: '🔍 搜索本站…',
+        noData: '😞 没找到相关内容',
+        paths: 'auto',       // 自动抓取所有 .md 建索引
+        depth: 3,
+        maxAge: 86400000     // 24h 缓存
+      },
+
+      // ===== 上一篇 / 下一篇 =====
+      pagination: {
+        previousText: '上一篇',
+        nextText: '下一篇',
+        crossChapter: true
+      },
+
+      // ===== 复制代码按钮 =====
+      copyCode: {
+        buttonText: '复制',
+        errorText: '复制失败',
+        successText: '已复制'
+      },
+
+      // ===== 插件 =====
+      plugins: [
+        // 1) 图片路径修正：docsify 用 hash 路由，浏览器按 location.pathname 解析
+        //    相对图片路径会随页面层级错位，这里统一改写成站点根下的绝对路径
+        function (hook) {
+          hook.doneEach(function () {
+            var pathname = window.location.pathname;
+            // 去掉文件名，只保留目录，并保证以 / 结尾
+            var siteRoot = pathname.replace(/[^\/]*$/, '');
+            if (!siteRoot.endsWith('/')) siteRoot += '/';
+
+            document.querySelectorAll('.markdown-section img').forEach(function (img) {
+              var src = img.getAttribute('src');
+              if (!src) return;
+              // 已经是绝对地址就不处理
+              if (/^(https?:)?\/\//i.test(src) || src.startsWith('/')) return;
+              try {
+                img.setAttribute('src', new URL(src, window.location.origin + siteRoot).pathname);
+              } catch (e) { /* 忽略非法 URL */ }
+            });
+          });
+        },
+
+        // 2) 暗黑模式切换：状态存 localStorage，刷新后保持
+        function (hook) {
+          hook.doneEach(function () {
+            if (document.querySelector('.theme-toggle')) return;
+            var btn = document.createElement('button');
+            btn.className = 'theme-toggle';
+
+            var saved = localStorage.getItem('docsify-theme');
+            if (saved === 'dark') document.body.classList.add('dark-mode');
+            btn.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+            btn.title = '切换日间/夜间模式';
+
+            btn.onclick = function () {
+              document.body.classList.toggle('dark-mode');
+              var dark = document.body.classList.contains('dark-mode');
+              localStorage.setItem('docsify-theme', dark ? 'dark' : 'light');
+              btn.textContent = dark ? '☀️' : '🌙';
+            };
+            document.body.appendChild(btn);
+          });
+        }
+      ]
+    }
+  </script>
+
+  <!-- 核心：docsify 必须放在其他插件之前 -->
+  <script src="https://cdn.jsdelivr.net/npm/docsify@5/lib/docsify.min.js"></script>
+  <!-- 搜索 / 图片放大 / 分页 / 复制代码 -->
+  <script src="https://cdn.jsdelivr.net/npm/docsify@5/lib/plugins/search.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/docsify@5/lib/plugins/zoom-image.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/docsify-pagination@2/dist/docsify-pagination.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/docsify-copy-code@3/dist/docsify-copy-code.min.js"></script>
+  <!-- Mermaid 图表：mermaid 10 + docsify-mermaid 2 是稳定组合 -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/docsify-mermaid@2/dist/docsify-mermaid.js"></script>
+</body>
+
+</html>

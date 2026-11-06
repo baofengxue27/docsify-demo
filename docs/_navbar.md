@@ -1,0 +1,4 @@
+- [首页](/)
+- [原理](basics/how-it-works.md)
+- [配置](guide/configure.md)
+- [GitHub](https://github.com/baofengxue27/docsify-demo)
