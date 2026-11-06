@@ -21,11 +21,17 @@ docsify 用标准的 marked 解析 Markdown，所以**没有方言**。下面是
 ## 图片
 
 ```markdown
+<!-- 根目录的 README.md 里 -->
 ![流程图](images/flow.svg)
+
+<!-- 子目录的页面里（比如 basics/how-it-works.md） -->
+![流程图](../images/flow.svg)
 ```
 
-**注意**：图片路径写成「站点根下的相对路径」。docsify 的 hash 路由不会改变 `location.pathname`，所以 `images/xxx.png` 在任何页面都能解析到 `/站点根/images/xxx.png`。
-如果层级深了发现图片裂开，看 [插件生态](advanced/plugins.md) 里那段图片修正插件。
+**规则：图片路径相对于“当前 md 文件所在目录”**（跟你在 GitHub 上预览 md 时的行为一致）。
+所以把图片集中在 `docs/images/` 时，子目录下的页面必须写 `../images/`。
+
+不要写 `/images/flow.svg` 这种“以站点根开头”的路径：项目部署在 `用户名.github.io/仓库名/` 子路径下，`/images/...` 会跑到域名根去，直接 404。
 
 ## 代码块
 

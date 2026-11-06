@@ -2,7 +2,7 @@
 
 理解这张图，就理解了 docsify 的全部。
 
-![docsify 渲染流程](images/flow.svg)
+![docsify 渲染流程](../images/flow.svg)
 
 ## 四步流程
 
@@ -55,7 +55,7 @@ curl -I https://baofengxue27.github.io/docsify-demo/guide/configure.md
 | 现象 | 根因 |
 | --- | --- |
 | 双击 `index.html` 打开是空白 | `file://` 协议下 `fetch` md 被 CORS 拦截，必须走 HTTP |
-| 图片裂开 / 404 | 浏览器按 `location.pathname` 解析相对路径，不含 hash，路径会少算一层 |
+| 图片裂开 / 404 | 图片路径按“当前 md 所在目录”解析，嵌套目录里写 `images/x.png` 会变成 `子目录/images/x.png`，要用 `../images/x.png` |
 | `_sidebar.md` 404 | GitHub Pages 默认用 Jekyll 处理站点，Jekyll 忽略下划线开头的文件，需要 `.nojekyll` |
 
 前两个坑本 demo 都处理了，详见 [插件生态](advanced/plugins.md)。

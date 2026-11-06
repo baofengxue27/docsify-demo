@@ -10,6 +10,8 @@
   <style>
     /* 站点根路径注入 CSS 变量，供图片修正插件使用 */
     .app-nav { z-index: 10; }
+    /* 图片自适应宽度，避免 SVG 撑破版心 */
+    .markdown-section img { max-width: 100%; }
     /* 表格在窄屏可横向滚动，避免被 docsify 默认样式压扁 */
     .markdown-section table { display: table; width: 100%; }
     /* 自定义提示块 */
@@ -108,22 +110,20 @@
 
       // ===== 插件 =====
       plugins: [
-        // 1) 图片路径修正：docsify 用 hash 路由，浏览器按 location.pathname 解析
-        //    相对图片路径会随页面层级错位，这里统一改写成站点根下的绝对路径
+        // 1) 图片路径归一化：Markdown 里的图片路径按“当前 md 所在目录”解析，
+        //    docsify 会拼上路由前缀，结果形如 /basics/../images/flow.svg。
+        //    虽然浏览器能自己消掉 ..，但 src 很难看，也容易误判，这里统一归一化。
         function (hook) {
           hook.doneEach(function () {
-            var pathname = window.location.pathname;
-            // 去掉文件名，只保留目录，并保证以 / 结尾
-            var siteRoot = pathname.replace(/[^\/]*$/, '');
-            if (!siteRoot.endsWith('/')) siteRoot += '/';
-
             document.querySelectorAll('.markdown-section img').forEach(function (img) {
               var src = img.getAttribute('src');
               if (!src) return;
-              // 已经是绝对地址就不处理
-              if (/^(https?:)?\/\//i.test(src) || src.startsWith('/')) return;
+              // 已经是外链（http:// 或 //）就跳过，避免破坏第三方图床地址
+              if (/^(https?:)?\/\//i.test(src)) return;
               try {
-                img.setAttribute('src', new URL(src, window.location.origin + siteRoot).pathname);
+                // new URL 会自动消掉 . 和 .. 段，得到干净的站点绝对路径
+                var clean = new URL(src, window.location.origin).pathname;
+                if (clean !== src) img.setAttribute('src', clean);
               } catch (e) { /* 忽略非法 URL */ }
             });
           });

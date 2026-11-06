@@ -48,22 +48,22 @@ CDN 引入顺序很重要：**docsify 核心必须最先**，插件在后。
 <!-- 第三方插件放后面 -->
 ```
 
-## 自己写一个：图片路径修正
+## 自己写一个：图片路径归一化
 
-这是 docsify 站最常见的坑。hash 路由不改变 `location.pathname`，相对图片路径容易错位，用 `doneEach` 统一改写成绝对路径：
+docsify 会把相对图片路径拼上当前页面路由的前缀，于是 `../images/flow.svg` 在 DOM 里变成 `/basics/../images/flow.svg`。浏览器能自己消掉 `..`，功能没问题，但 src 很丑、也不好排查。用 `doneEach` 归一化一下：
 
 ```js
 function (hook) {
   hook.doneEach(function () {
-    var pathname = window.location.pathname;
-    var siteRoot = pathname.replace(/[^\/]*$/, '');   // 去掉文件名，保留目录
-    if (!siteRoot.endsWith('/')) siteRoot += '/';
-
     document.querySelectorAll('.markdown-section img').forEach(function (img) {
       var src = img.getAttribute('src');
       if (!src) return;
-      if (/^(https?:)?\/\//i.test(src) || src.startsWith('/')) return;  // 绝对地址跳过
-      img.setAttribute('src', new URL(src, location.origin + siteRoot).pathname);
+      if (/^(https?:)?\/\//i.test(src)) return;      // 外链跳过
+      try {
+        // new URL 会自动消掉 . 和 .. 段
+        var clean = new URL(src, location.origin).pathname;
+        if (clean !== src) img.setAttribute('src', clean);
+      } catch (e) { /* 忽略非法 URL */ }
     });
   });
 }

@@ -63,7 +63,9 @@ cd docs && python3 -m http.server 3000
 
 ### 3. 图片裂开
 
-hash 路由不改变 `location.pathname`，相对路径容易少算一层。用 [插件生态](advanced/plugins.md) 里的图片修正插件，或者干脆把图片放 `docs/images/` 并写 `images/xxx.png`。
+图片路径是相对**当前 md 文件所在目录**解析的。图片统一放 `docs/images/` 时，子目录页面必须写 `../images/xxx.png`；写成 `images/xxx.png` 会被解析到 `子目录/images/xxx.png`。
+
+也不要用 `/images/xxx.png` 这种站点根绝对路径：项目部署在 `用户名.github.io/仓库名/` 子路径下，`/images/...` 会跑到域名根去 404。
 
 ### 4. 中文标题的旧链接失效
 
